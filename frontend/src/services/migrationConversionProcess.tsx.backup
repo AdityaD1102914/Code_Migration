@@ -1,0 +1,49 @@
+import { generateAIResponse } from "./aiService";
+
+
+export async function aiConversionFunction(files) {
+
+  const conversions = await Promise.all(
+    files.map(async (file) => {
+      const content =  file?.content
+      const fileName = file?.path;
+
+      const prompt = `
+You are an expert React developer. Convert the following React class component to a modern functional component using React hooks.
+
+Requirements:
+- Convert class component to functional component with hooks
+- Use useState for state management
+- Use useEffect for lifecycle methods (componentDidMount, componentDidUpdate, componentWillUnmount)
+- Use useCallback and useMemo where appropriate for optimization
+- Maintain all existing functionality
+- Keep the same prop types and interfaces
+- Add proper comments explaining the conversion
+- Follow modern React best practices
+- don't change the file name dont add anything extra
+
+Original Code:
+\`\`\`
+${content}
+\`\`\`
+
+Provide ONLY the converted code without any explanations. Start directly with the imports.
+`;
+
+        const result = await generateAIResponse(prompt);
+
+      // Remove markdown code blocks if present
+      const cleanCode = result
+      .replace(/^```[\w]*\n/, "")
+      .replace(/\n```$/, "")
+      .trim();
+      
+      return {
+        path: fileName,
+        content: cleanCode,
+      };
+    })
+  );
+
+  return conversions;
+}

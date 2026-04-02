@@ -1,0 +1,805 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  Upload,
+  GitBranch,
+  FileCode,
+  RefreshCw,
+  Sparkles,
+  Link,
+  Package,
+  FolderOpen,
+  X,
+  Trash2,
+  Download,
+  ArrowRight,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
+import JSZip from "jszip";
+import { convertToFunctional } from "../../services/convertReactFile";
+
+const FRAMEWORK_CONFIG = {
+  react: {
+    name: "React",
+    extensions: [".js", ".jsx", ".ts", ".tsx"],
+    specialFiles: ["package.json"],
+    uploadTitle: "Upload React Components to Convert",
+    githubDescription:
+      "Enter a GitHub repository URL to convert class components",
+    githubNote:
+      "We'll fetch all React files and convert class components to functional components",
+    acceptAttr: ".js,.jsx,.tsx,.ts",
+  },
+};
+
+const shouldProcessFile = (fullPath) => {
+  const extensions = [".js", ".jsx", ".ts", ".tsx"];
+  return extensions.some((ext) => fullPath.endsWith(ext));
+};
+
+const shouldIgnoreDirectory = (dirPath) => {
+  const ignored = ["node_modules/", ".git/", "dist/", "build/", "coverage/"];
+  return ignored.some((ignoredDir) => dirPath.includes(ignoredDir));
+};
+
+const filterRelevantFiles = (files) => {
+  return files.filter((file) => {
+    const path = file.path || file.webkitRelativePath || file.name;
+    return shouldProcessFile(path) && !shouldIgnoreDirectory(path);
+  });
+};
+
+const getFileStatistics = (files) => {
+  const stats = { js: 0, jsx: 0, ts: 0, tsx: 0 };
+
+  files.forEach((file) => {
+    const name = file.name.toLowerCase();
+    if (name.endsWith(".jsx")) stats.jsx++;
+    else if (name.endsWith(".js")) stats.js++;
+    else if (name.endsWith(".tsx")) stats.tsx++;
+    else if (name.endsWith(".ts")) stats.ts++;
+  });
+
+  return stats;
+};
+
+const ConversionSection = ({
+  framework = "react",
+  handleGithubRepo,
+  githubFiles,
+  analysisFiles, // Files passed from analysis page
+}) => {
+  const config = FRAMEWORK_CONFIG[framework];
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // --- Internal state ---
+  const [activeTab, setActiveTab] = useState("upload");
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [converting, setConverting] = useState(false);
+  const [convertedCode, setConvertedCode] = useState(null);
+  const [error, setError] = useState(null);
+  const [repoUrl, setRepoUrl] = useState("");
+  const [fetchingRepo, setFetchingRepo] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+
+  // Track if we've already processed the current githubFiles
+  const [processedGithubFiles, setProcessedGithubFiles] = useState(null);
+
+  // Check for files passed from analysis or location state
+  useEffect(() => {
+    if (location.state?.filesToConvert) {
+    
+      setUploadedFiles(location.state.filesToConvert);
+      setActiveTab("upload");
+    } else if (analysisFiles && analysisFiles.length > 0) {
+      console.log("Received analysis files as prop:", analysisFiles);
+      setUploadedFiles(analysisFiles);
+      setActiveTab("upload");
+    }
+  }, [location.state, analysisFiles]);
+
+  // Handle GitHub files when received
+  useEffect(() => {
+    if (
+      githubFiles &&
+      githubFiles.length > 0 &&
+      githubFiles !== processedGithubFiles
+    ) {
+      setProcessedGithubFiles(githubFiles);
+      setFetchingRepo(false);
+
+      // Convert GitHub response to File-like objects
+      const files = githubFiles.map((file) => {
+        const blob = new Blob([file.content || ""], { type: "text/plain" });
+        const fileObj = new File([blob], file.name, { type: "text/plain" });
+        fileObj.path = file.path;
+        // Store original content for conversion
+        fileObj.originalContent = file.content;
+        return fileObj;
+      });
+
+      const filteredFiles = filterRelevantFiles(files);
+      setUploadedFiles(filteredFiles);
+      console.log("GitHub files loaded:", filteredFiles.length);
+    }
+  }, [githubFiles]);
+
+  // --- Conversion Handler ---
+  const convertFiles = async () => {
+    if (uploadedFiles.length === 0) {
+      setError("Please upload at least one file");
+      return;
+    }
+
+    setConverting(true);
+    setError(null);
+
+    try {
+      // Read original file contents
+      const originalContents = await Promise.all(
+        uploadedFiles.map((file) =>
+          file.originalContent
+            ? Promise.resolve(file.originalContent)
+            : file.text()
+        )
+      );
+
+      // Convert the files
+      const converted = await convertToFunctional(uploadedFiles);
+
+      // Prepare files with both original and converted content
+      const filesWithOriginals = converted.map((file, index) => ({
+        name: file.name,
+        originalName: uploadedFiles[index].name,
+        content: file.content,
+        originalContent: originalContents[index],
+        path: uploadedFiles[index].path || `src/components/${file.name}`,
+      }));
+
+      console.log("Conversion complete:", filesWithOriginals);
+      setConvertedCode(filesWithOriginals);
+    } catch (err) {
+      console.error("Conversion error:", err);
+      setError(err.message || "An error occurred during conversion");
+    } finally {
+      setConverting(false);
+    }
+  };
+
+  // --- Navigation to Review ---
+  const navigateToReview = () => {
+    if (!convertedCode || convertedCode.length === 0) {
+      setError("No converted files to review");
+      return;
+    }
+
+    console.log("Navigating to review with files:", convertedCode);
+    navigate("/review", {
+      state: { convertedFiles: convertedCode },
+    });
+  };
+
+  // --- GitHub Handler ---
+  const analyzeGitHubRepo = async () => {
+    if (!repoUrl.trim()) {
+      setError("Please enter a GitHub repository URL");
+      return;
+    }
+
+    const githubPattern = /github\.com\/([\w-]+)\/([\w-]+)/;
+    const match = repoUrl.match(githubPattern);
+
+    if (!match) {
+      setError("Please enter a valid GitHub repository URL");
+      return;
+    }
+
+    const owner = match[1];
+    const repo = match[2].replace(/\.git$/, "");
+
+    setFetchingRepo(true);
+    setError(null);
+    setConvertedCode(null);
+    setProcessedGithubFiles(null);
+
+    if (handleGithubRepo) {
+      handleGithubRepo(owner, repo, "");
+    } else {
+      setError("GitHub integration not configured");
+      setFetchingRepo(false);
+    }
+  };
+
+  // --- File Handling ---
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const items = e.dataTransfer.items;
+    const files = [];
+
+    if (items?.[0]?.webkitGetAsEntry) {
+      const entries = [];
+      for (let i = 0; i < items.length; i++) {
+        const entry = items[i].webkitGetAsEntry();
+        if (entry) entries.push(entry);
+      }
+      const promises = entries.map((entry) =>
+        traverseFileTree(entry, files, "")
+      );
+      await Promise.all(promises);
+      handleFiles(files);
+    } else {
+      handleFiles([...e.dataTransfer.files]);
+    }
+  };
+
+  const traverseFileTree = (item, files, path = "") => {
+    return new Promise((resolve) => {
+      if (item.isFile) {
+        item.file((file) => {
+          const fullPath = path + file.name;
+          if (shouldProcessFile(fullPath)) {
+            file.path = fullPath;
+            files.push(file);
+          }
+          resolve();
+        });
+      } else if (item.isDirectory) {
+        const dirName = item.name;
+        const dirPath = path + dirName + "/";
+        if (shouldIgnoreDirectory(dirPath)) {
+          resolve();
+          return;
+        }
+        const dirReader = item.createReader();
+        const readEntries = () => {
+          dirReader.readEntries((entries) => {
+            if (entries.length === 0) {
+              resolve();
+              return;
+            }
+            const promises = entries.map((entry) =>
+              traverseFileTree(entry, files, dirPath)
+            );
+            Promise.all(promises).then(readEntries);
+          });
+        };
+        readEntries();
+      } else {
+        resolve();
+      }
+    });
+  };
+
+  const handleFiles = (files) => {
+    const relevantFiles = filterRelevantFiles(files);
+    setUploadedFiles(relevantFiles);
+    setConvertedCode(null);
+    setError(null);
+  };
+
+  const handleFileInput = (e) => {handleFiles([...e.target.files]);
+  console.log('e.target.files: ', e.target.files);}
+
+  const handleDirectoryInput = (e) => {
+    const filesWithPath = [...e.target.files].map((file) => {
+      if (file.webkitRelativePath) file.path = file.webkitRelativePath;
+      return file;
+    });
+    handleFiles(filesWithPath);
+  };
+
+  const removeFile = (index) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+    setConvertedCode(null);
+  };
+
+  const clearAllFiles = () => {
+    setUploadedFiles([]);
+    setConvertedCode(null);
+    setError(null);
+  };
+
+  // --- Download Functions ---
+  const downloadFile = (file) => {
+    const blob = new Blob([file.content], { type: "text/javascript" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file.name;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadAll = async () => {
+    if (!convertedCode || convertedCode.length === 0) return;
+
+    console.log("Starting ZIP download with", convertedCode.length, "files");
+
+    try {
+      const zip = new JSZip();
+
+      // Add each converted file to the ZIP
+      convertedCode.forEach((file) => {
+        console.log("Adding to ZIP:", file.name);
+        zip.file(file.name, file.content);
+      });
+
+      console.log("Generating ZIP blob...");
+      // Generate the ZIP file
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      console.log("ZIP blob generated, size:", zipBlob.size, "bytes");
+
+      // Download the ZIP
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "converted-react-components.zip";
+      document.body.appendChild(a);
+      console.log("Triggering download...");
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      console.log("ZIP download complete!");
+    } catch (error) {
+      console.error("Error creating ZIP:", error);
+      setError("Failed to create ZIP file. Downloading files individually...");
+      convertedCode.forEach((file) => downloadFile(file));
+    }
+  };
+
+  // --- Derived data ---
+  const fileStats = getFileStatistics(uploadedFiles);
+
+  // --- Render ---
+  return (
+    <>
+      <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
+        {/* Tab Navigation */}
+        <div className="flex border-b border-gray-200 mb-6">
+          <button
+            onClick={() => setActiveTab("upload")}
+            className={`flex items-center px-6 py-3 font-medium transition-colors ${
+              activeTab === "upload"
+                ? "text-indigo-600 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            <Upload className="w-5 h-5 mr-2" />
+            Upload Files
+          </button>
+          <button
+            onClick={() => setActiveTab("github")}
+            className={`flex items-center px-6 py-3 font-medium transition-colors ${
+              activeTab === "github"
+                ? "text-indigo-600 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            <GitBranch className="w-5 h-5 mr-2" />
+            GitHub Repository
+          </button>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-red-800">Error</h3>
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="ml-auto text-red-500 hover:text-red-700"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Upload Tab */}
+        {activeTab === "upload" && (
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {config.uploadTitle}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Upload React class components to convert them to modern functional
+              components with hooks
+            </p>
+
+            <div
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              className={`border-2 border-dashed rounded-xl p-12 text-center transition ${
+                dragActive
+                  ? "border-indigo-500 bg-indigo-50"
+                  : "border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              <div className="bg-indigo-100 p-4 rounded-full inline-block mb-4">
+                <Upload className="w-12 h-12 text-indigo-600" />
+              </div>
+              <p className="text-lg text-gray-700 mb-2">
+                Drag and drop your React files here
+              </p>
+              <p className="text-sm text-gray-500 mb-4">
+                Supports .js, .jsx, .tsx, .ts files
+              </p>
+
+              <input
+                type="file"
+                multiple
+                accept={config.acceptAttr}
+                onChange={handleFileInput}
+                className="hidden"
+                id="conversion-file-upload"
+              />
+              <input
+                type="file"
+                webkitdirectory=""
+                directory=""
+                multiple
+                onChange={handleDirectoryInput}
+                className="hidden"
+                id="conversion-folder-upload"
+              />
+              <div className="flex gap-3 justify-center">
+                <label
+                  htmlFor="conversion-file-upload"
+                  className="inline-flex items-center bg-indigo-600 text-white px-6 py-3 rounded-lg cursor-pointer hover:bg-indigo-700 transition"
+                >
+                  <FileCode className="w-5 h-5 mr-2" />
+                  Choose Files
+                </label>
+                <label
+                  htmlFor="conversion-folder-upload"
+                  className="inline-flex items-center bg-purple-600 text-white px-6 py-3 rounded-lg cursor-pointer hover:bg-purple-700 transition"
+                >
+                  <FolderOpen className="w-5 h-5 mr-2" />
+                  Choose Folder
+                </label>
+              </div>
+            </div>
+
+            {/* File List */}
+            {uploadedFiles.length > 0 && !convertedCode && (
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-gray-900">
+                    Selected Files ({uploadedFiles.length})
+                  </h4>
+                  <button
+                    onClick={clearAllFiles}
+                    className="flex items-center text-red-600 hover:text-red-700 text-sm font-medium transition"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Clear All
+                  </button>
+                </div>
+
+                {/* File Stats */}
+                <div className="grid grid-cols-4 gap-2 mb-4">
+                  {Object.entries(fileStats).map(([ext, count]) => {
+                    if (count === 0) return null;
+                    return (
+                      <div
+                        key={ext}
+                        className="bg-indigo-50 border border-indigo-200 rounded p-2 text-center"
+                      >
+                        <FileCode className="w-4 h-4 text-indigo-600 mx-auto mb-1" />
+                        <p className="text-xs text-gray-600">.{ext}</p>
+                        <p className="text-sm font-semibold text-indigo-700">
+                          {count}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* File List */}
+                <div className="space-y-2 max-h-60 overflow-y-auto bg-gray-50 rounded-lg p-3 mb-4">
+                  {uploadedFiles.map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between text-sm p-3 rounded-lg bg-white border border-gray-200 group hover:shadow-sm transition"
+                    >
+                      <div className="flex items-center min-w-0 flex-1">
+                        <FileCode className="w-4 h-4 mr-2 flex-shrink-0 text-indigo-600" />
+                        <span className="truncate text-gray-800">
+                          {file.path || file.webkitRelativePath || file.name}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 mx-2">
+                        {file.size ? (file.size / 1024).toFixed(1) + " KB" : ""}
+                      </span>
+                      <button
+                        onClick={() => removeFile(idx)}
+                        className="p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition flex-shrink-0 opacity-0 group-hover:opacity-100"
+                        title="Remove file"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Convert Button */}
+                <button
+                  onClick={convertFiles}
+                  disabled={converting || uploadedFiles.length === 0}
+                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-indigo-700 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
+                >
+                  {converting ? (
+                    <>
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      Converting Components...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-6 h-6" />
+                      Convert to Modern React
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* GitHub Tab */}
+        {activeTab === "github" && (
+          <div>
+            <div className="text-center max-w-2xl mx-auto">
+              <div className="w-24 h-24 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                <GitBranch className="w-12 h-12 text-white" />
+              </div>
+
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                Convert GitHub Repository
+              </h3>
+              <p className="text-gray-600 mb-4">{config.githubDescription}</p>
+              <p className="text-sm text-gray-500 mb-8">{config.githubNote}</p>
+
+              <div className="mb-6">
+                <div className="relative">
+                  <Link className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={repoUrl}
+                    onChange={(e) => setRepoUrl(e.target.value)}
+                    onKeyPress={(e) =>
+                      e.key === "Enter" &&
+                      !fetchingRepo &&
+                      !converting &&
+                      repoUrl.trim() &&
+                      analyzeGitHubRepo()
+                    }
+                    placeholder="https://github.com/username/repository"
+                    className="w-full pl-12 pr-4 py-4 border-2 border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-indigo-500 transition"
+                    disabled={fetchingRepo || converting}
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={analyzeGitHubRepo}
+                disabled={converting || fetchingRepo || !repoUrl.trim()}
+                className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-8 py-4 rounded-lg font-semibold hover:from-gray-900 hover:to-black transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto"
+              >
+                {fetchingRepo ? (
+                  <>
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    Fetching Repository...
+                  </>
+                ) : (
+                  <>
+                    <GitBranch className="w-5 h-5" />
+                    Fetch & Convert
+                  </>
+                )}
+              </button>
+
+              {/* Show files from GitHub */}
+              {uploadedFiles.length > 0 &&
+                activeTab === "github" &&
+                !convertedCode && (
+                  <div className="mt-8 text-left">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-lg font-semibold text-gray-900">
+                        Repository Files ({uploadedFiles.length})
+                      </h4>
+                    </div>
+
+                    <div className="space-y-2 max-h-40 overflow-y-auto bg-gray-50 rounded-lg p-3 mb-4">
+                      {uploadedFiles.map((file, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center text-sm p-2 rounded bg-white border border-gray-200"
+                        >
+                          <FileCode className="w-4 h-4 mr-2 text-indigo-600" />
+                          <span className="truncate text-gray-700">
+                            {file.path || file.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={convertFiles}
+                      disabled={converting}
+                      className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-3"
+                    >
+                      {converting ? (
+                        <>
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                          Converting Components...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-6 h-6" />
+                          Convert All Files
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+              <p className="text-sm text-gray-500 mt-6">
+                Make sure the repository is public or you have access to it
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Conversion Results */}
+      {convertedCode && convertedCode.length > 0 && (
+        <div className="space-y-6">
+          {/* Success Header */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2 mb-2">
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                  Conversion Complete!
+                </h2>
+                <p className="text-gray-600">
+                  {convertedCode.length} file(s) successfully converted to
+                  modern React
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={downloadAll}
+                  className="bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition flex items-center gap-2 shadow-lg"
+                >
+                  <Download className="w-5 h-5" />
+                  Download All
+                </button>
+                <button
+                  onClick={navigateToReview}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition flex items-center gap-2 shadow-lg"
+                >
+                  Review & Deploy
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Side-by-Side Comparison */}
+          {convertedCode.map((file, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-xl shadow-lg overflow-hidden"
+            >
+              {/* File Header */}
+              <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-white">
+                    <FileCode className="w-6 h-6" />
+                    <div>
+                      <h3 className="font-bold text-lg">{file.name}</h3>
+                      <p className="text-sm text-indigo-100">
+                        Converted from {file.originalName}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => downloadFile(file)}
+                    className="bg-white text-indigo-600 py-2 px-4 rounded font-medium hover:bg-indigo-50 transition flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </button>
+                </div>
+              </div>
+
+              {/* Code Comparison */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 divide-x divide-gray-200">
+                {/* Original Code */}
+                <div>
+                  <div className="bg-red-50 px-4 py-2 border-b-2 border-red-200">
+                    <h4 className="font-semibold text-red-800 flex items-center gap-2">
+                      <X className="w-4 h-4" />
+                      Original Code (Class Component)
+                    </h4>
+                  </div>
+                  <div
+                    className="bg-gray-900 p-4 overflow-auto"
+                    style={{ maxHeight: "400px" }}
+                  >
+                    <pre className="text-sm text-gray-300 font-mono">
+                      <code>{file.originalContent}</code>
+                    </pre>
+                  </div>
+                </div>
+
+                {/* Converted Code */}
+                <div>
+                  <div className="bg-green-50 px-4 py-2 border-b-2 border-green-200">
+                    <h4 className="font-semibold text-green-800 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Modern Code (Functional Component)
+                    </h4>
+                  </div>
+                  <div
+                    className="bg-gray-900 p-4 overflow-auto"
+                    style={{ maxHeight: "400px" }}
+                  >
+                    <pre className="text-sm text-green-400 font-mono">
+                      <code>{file.content}</code>
+                    </pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Call to Action */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-8 border-2 border-blue-200 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                  Ready for the next step?
+                </h3>
+                <p className="text-gray-600 text-lg">
+                  Review your converted files, provide feedback for AI
+                  refinement, and deploy
+                </p>
+              </div>
+              <button
+                onClick={navigateToReview}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-8 rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transition flex items-center gap-2 shadow-xl transform hover:scale-105"
+              >
+                Continue to Review
+                <ArrowRight className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default ConversionSection;

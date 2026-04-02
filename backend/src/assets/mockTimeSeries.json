@@ -1,0 +1,10 @@
+[
+    {
+        "timeStamp": "1984-03-05T18:00:00.000+00:00",
+        "temperature": 22.5,
+        "metaData": {
+            "sesorId": "test",
+            "sourceId": "testSource"
+        }
+    }
+]

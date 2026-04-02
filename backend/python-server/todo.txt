@@ -1,0 +1,6 @@
+1. MQTT Connection
+2. Fetch List of devices
+3. Save to local CSV/JSON
+4. Generate Random Readings for different devices
+5. Publish the readings to MQTT Topic
+6. Track MQTT Topic to get simulation operations and change reading accordingly

@@ -1,0 +1,54 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+export const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
+
+export async function convertToFunctional(files) {
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+  const conversions = await Promise.all(
+    files.map(async (file) => {
+      const content = await file.text();
+      const fileName = file.name;
+
+      const prompt = `
+You are an expert React developer. Convert the following React class component to a modern functional component using React hooks.
+
+Requirements:
+- Convert class component to functional component with hooks
+- Use useState for state management
+- Use useEffect for lifecycle methods (componentDidMount, componentDidUpdate, componentWillUnmount)
+- Use useCallback and useMemo where appropriate for optimization
+- Maintain all existing functionality
+- Keep the same prop types and interfaces
+- Add proper comments explaining the conversion
+- Follow modern React best practices
+
+Original Code:
+\`\`\`
+${content}
+\`\`\`
+
+Provide ONLY the converted code without any explanations. Start directly with the imports.
+`;
+
+      const result = await model.generateContent(prompt);
+      const convertedCode = result.response.text().trim();
+      
+      // Remove markdown code blocks if present
+      const cleanCode = convertedCode
+        .replace(/^```[\w]*\n/, '')
+        .replace(/\n```$/, '')
+        .trim();
+
+      return {
+        name: fileName.replace('.jsx', '_converted.jsx').replace('.js', '_converted.js'),
+        content: cleanCode
+      };
+    })
+  );
+
+  return conversions;
+}

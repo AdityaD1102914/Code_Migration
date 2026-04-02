@@ -1,0 +1,158 @@
+import { Github, Sparkles, Telescope, Code, Clock } from "lucide-react";
+import { Link } from "react-router-dom";
+import useAxiosInterceptor from "../hooks/useAxiosInterceptor";
+import { useEffect } from "react";
+import axios from "axios";
+import { ENDPOINTS } from "../config/api.config";
+import axiosInstance from "../config/axiosInstance";
+
+const LandingPage = () => {
+  //Intercepor to intercept the api requests and response
+
+  const getInfo = async () => {
+    const userDetals = await axiosInstance.get(`${ENDPOINTS.user}/currentUser`); //use this Axios Instance
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-white font-sans antialiased">
+      <section className="flex flex-col items-center justify-center text-center px-6 py-24 md:py-36">
+        <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold max-w-5xl leading-tight bg-gradient-to-r from-blue-400 to-purple-600 text-transparent bg-clip-text pulse-slow">
+          Effortless Frontend Modernization with AI
+        </h1>
+        <p className="mt-6 text-lg md:text-xl text-gray-400 max-w-3xl leading-relaxed">
+          Tired of wrestling with legacy code? Our module automates the entire
+          migration process, from deep code analysis to AI-driven
+          transformation.
+        </p>
+        <Link to="/project">
+          <button
+            type="button"
+            className="mt-12 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-full text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 cursor-pointer"
+            onClick={getInfo}
+          >
+            Get Started
+          </button>
+        </Link>
+      </section>
+
+      <section className="bg-gray-900 py-20 px-6">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold">How It Works</h2>
+          <p className="mt-4 text-gray-400 max-w-3xl mx-auto">
+            Our powerful module guides you through a streamlined, three-step
+            process to bring your frontend into the modern era.
+          </p>
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 text-left">
+            <div className="flex flex-col p-8 bg-gray-800 rounded-2xl shadow-lg border border-gray-700 transition-transform duration-300 hover:scale-105">
+              <div className="flex items-center mb-4">
+                <div className="p-3 rounded-full bg-purple-600 text-white">
+                  <Github size={28} />
+                </div>
+                <h3 className="ml-4 text-2xl font-semibold">
+                  Connect & Import
+                </h3>
+              </div>
+              <p className="mt-2 text-gray-300 leading-relaxed">
+                Connect your GitHub repository in seconds. Our platform will
+                securely access and analyze your codebase, or you can simply
+                upload your project folder.
+              </p>
+            </div>
+            <div className="flex flex-col p-8 bg-gray-800 rounded-2xl shadow-lg border border-gray-700 transition-transform duration-300 hover:scale-105">
+              <div className="flex items-center mb-4">
+                <div className="p-3 rounded-full bg-blue-600 text-white">
+                  <Telescope size={28} />
+                </div>
+                <h3 className="ml-4 text-2xl font-semibold">
+                  Deep AI Analysis
+                </h3>
+              </div>
+              <p className="mt-2 text-gray-300 leading-relaxed">
+                Our AI delves deep into your code to identify dependencies,
+                patterns, and modernization challenges. Get a comprehensive
+                report and a clear roadmap for migration.
+              </p>
+            </div>
+            <div className="flex flex-col p-8 bg-gray-800 rounded-2xl shadow-lg border border-gray-700 transition-transform duration-300 hover:scale-105">
+              <div className="flex items-center mb-4">
+                <div className="p-3 rounded-full bg-teal-600 text-white">
+                  <Sparkles size={28} />
+                </div>
+                <h3 className="ml-4 text-2xl font-semibold">
+                  AI-Powered Migration
+                </h3>
+              </div>
+              <p className="mt-2 text-gray-300 leading-relaxed">
+                Receive AI-generated code transformations and step-by-step
+                guidance. Our system assists you in migrating smoothly, ensuring
+                high code quality and consistency.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-6">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold">
+            The Benefits of Modernization
+          </h2>
+          <p className="mt-4 text-gray-400 max-w-3xl mx-auto">
+            Our module goes beyond simple migration, helping you unlock your
+            team's full potential.
+          </p>
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-12 text-left">
+            <div className="p-8 bg-gray-900 rounded-2xl shadow-xl border border-gray-800">
+              <div className="flex items-center text-blue-400 mb-4">
+                <Code size={32} />
+                <h3 className="ml-4 text-2xl font-semibold">
+                  Superior Code Quality
+                </h3>
+              </div>
+              <p className="mt-2 text-gray-300 leading-relaxed">
+                By leveraging AI, we help you transition to modern, maintainable
+                codebases that are easier to debug and scale, reducing technical
+                debt over time.
+              </p>
+            </div>
+            <div className="p-8 bg-gray-900 rounded-2xl shadow-xl border border-gray-800">
+              <div className="flex items-center text-purple-400 mb-4">
+                <Clock size={32} />
+                <h3 className="ml-4 text-2xl font-semibold">
+                  Accelerated Development
+                </h3>
+              </div>
+              <p className="mt-2 text-gray-300 leading-relaxed">
+                Automate the tedious parts of migration and free up your
+                developers to focus on building new, innovative features.
+                Deliver more, faster.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-6 text-center">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold leading-snug">
+            Ready to transform your frontend?
+          </h2>
+          <p className="mt-4 text-gray-400 max-w-2xl mx-auto">
+            Get started by analyzing your code and seeing the path to
+            modernization.
+          </p>
+          <Link to="/project">
+            <button
+              type="button"
+              className="mt-10 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-12 rounded-full text-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
+              Get Started
+            </button>
+          </Link>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default LandingPage;

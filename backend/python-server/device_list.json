@@ -1,0 +1,274 @@
+[
+    {
+        "_id": "6891b1aae5454109e9d30953",
+        "device_name": "Temprature",
+        "device_type": "temperature",
+        "source_id": "temperature_MODEL_11ROOM_1",
+        "unit": "C",
+        "status": "ok",
+        "description": "To track temptrature",
+        "device_location": {
+            "modelId": "MODEL_11",
+            "modelLocationId": "96889594"
+        },
+        "device_geolocation": {
+            "lat": null,
+            "long": null
+        },
+        "anomaly_range": {
+            "min": 18,
+            "max": 28
+        },
+        "fault_range": {
+            "min": 15,
+            "max": 30
+        },
+        "normal_range": {
+            "min": 20,
+            "max": 26
+        },
+        "createdAt": "2025-08-05T07:24:26.620Z",
+        "updatedAt": "2025-08-22T08:13:44.857Z",
+        "__v": 0
+    },
+    {
+        "_id": "68a82084d11be80b8838276f",
+        "device_name": "Occupancy",
+        "device_type": "occupancy",
+        "source_id": "occupancy_",
+        "unit": "NA",
+        "status": "ok",
+        "description": "Occupancy for room",
+        "device_location": {
+            "modelId": "00000",
+            "modelLocationId": "34567"
+        },
+        "device_geolocation": {
+            "lat": null,
+            "long": null
+        },
+        "normal_range": {
+            "min": null,
+            "max": null
+        },
+        "createdAt": "2025-08-22T07:47:16.925Z",
+        "updatedAt": "2025-08-22T11:52:09.423Z",
+        "__v": 0
+    },
+    {
+        "_id": "68a82104d11be80b88382784",
+        "device_name": "CO2",
+        "device_type": "co2",
+        "source_id": "co2_",
+        "unit": "PPM",
+        "status": "ok",
+        "description": "Quality of Air",
+        "device_location": {
+            "modelId": "129230-9",
+            "modelLocationId": "123456"
+        },
+        "device_geolocation": {
+            "lat": null,
+            "long": null
+        },
+        "normal_range": {
+            "min": null,
+            "max": null
+        },
+        "createdAt": "2025-08-22T07:49:24.230Z",
+        "updatedAt": "2025-08-22T11:51:52.669Z",
+        "__v": 0
+    },
+    {
+        "_id": "68a82127d11be80b88382790",
+        "device_name": "Water Flow",
+        "device_type": "flow",
+        "source_id": "waterflow_",
+        "unit": "L/M",
+        "status": "ok",
+        "description": "Water Flow",
+        "device_location": {
+            "modelId": "",
+            "modelLocationId": "932402384"
+        },
+        "device_geolocation": {
+            "lat": null,
+            "long": null
+        },
+        "normal_range": {
+            "min": null,
+            "max": null
+        },
+        "createdAt": "2025-08-22T07:49:59.655Z",
+        "updatedAt": "2025-08-22T08:13:51.100Z",
+        "__v": 0
+    },
+    {
+        "_id": "68ac1c1040301ee05b959f64",
+        "device_name": "sample new sensor",
+        "device_type": "temperature",
+        "source_id": "temperature_68a86214663e5ba07f6f9751",
+        "unit": "78",
+        "status": "error",
+        "description": "Sensor at 0gJXoXMJ9FofutryhROZlV",
+        "device_location": {
+            "modelId": "68a86214663e5ba07f6f9751",
+            "modelLocationId": "8b35ac2a-7bd9-4c2e-bb62-9a7aade9b283"
+        },
+        "device_geolocation": {
+            "lat": null,
+            "long": null
+        },
+        "normal_range": {
+            "min": null,
+            "max": null
+        },
+        "createdAt": "2025-08-25T08:17:20.683Z",
+        "updatedAt": "2025-08-25T11:15:10.079Z",
+        "__v": 0
+    },
+    {
+        "_id": "68ad607640301ee05b95a000",
+        "device_name": "Sensor 1",
+        "device_type": "temperature",
+        "source_id": "temperature_68a86214663e5ba07f6f9751",
+        "unit": "Celcius",
+        "status": "ok",
+        "description": "Sensor at 0gJXoXMJ9FofutryhROZlV",
+        "device_location": {
+            "modelId": "68a86214663e5ba07f6f9751",
+            "modelLocationId": "0gJXoXMJ9FofutryhROZlV"
+        },
+        "device_geolocation": {
+            "lat": null,
+            "long": null
+        },
+        "normal_range": {
+            "min": null,
+            "max": null
+        },
+        "createdAt": "2025-08-26T07:21:26.638Z",
+        "updatedAt": "2025-08-26T07:21:26.638Z",
+        "__v": 0
+    },
+    {
+        "_id": "68adaf0b858cbd2def969153",
+        "device_name": "Temp Device New",
+        "device_type": "temperature",
+        "source_id": "temperature_68a86214663e5ba07f6f9751",
+        "unit": "Celcius",
+        "status": "ok",
+        "description": "Sensor at 2KfpxTSnH0xfEb1Txf7ZtR",
+        "device_location": {
+            "modelId": "68a86214663e5ba07f6f9751",
+            "modelLocationId": "2KfpxTSnH0xfEb1Txf7ZtR"
+        },
+        "device_geolocation": {
+            "lat": null,
+            "long": null
+        },
+        "normal_range": {
+            "min": null,
+            "max": null
+        },
+        "createdAt": "2025-08-26T12:56:43.214Z",
+        "updatedAt": "2025-08-26T12:56:43.214Z",
+        "__v": 0
+    },
+    {
+        "_id": "68af0ff0eebe75a35e2280f9",
+        "device_name": "GauravTest",
+        "device_type": "temperature",
+        "source_id": "temperature_Test",
+        "unit": "Test",
+        "status": "offline",
+        "description": "Test",
+        "device_location": {
+            "modelId": "Test",
+            "modelLocationId": "Test"
+        },
+        "device_geolocation": {
+            "lat": null,
+            "long": null
+        },
+        "normal_range": {
+            "min": null,
+            "max": null
+        },
+        "createdAt": "2025-08-27T14:02:24.039Z",
+        "updatedAt": "2025-08-27T14:56:27.227Z",
+        "__v": 0
+    },
+    {
+        "device_name": "Side wall",
+        "device_type": "temperature",
+        "source_id": "temperature_68a86214663e5ba07f6f9751",
+        "unit": "Celcius",
+        "status": "ok",
+        "description": "Sensor at 0vmpfXygz7uuHDQdlxqLtB",
+        "device_location": {
+            "modelId": "68a86214663e5ba07f6f9751",
+            "modelLocationId": "0vmpfXygz7uuHDQdlxqLtB"
+        },
+        "device_geolocation": {
+            "lat": null,
+            "long": null
+        },
+        "normal_range": {
+            "min": null,
+            "max": null
+        },
+        "_id": "68b00ce4438e1554509383d1",
+        "createdAt": "2025-08-28T08:01:40.794Z",
+        "updatedAt": "2025-08-28T08:01:40.794Z",
+        "__v": 0
+    },
+    {
+        "device_name": "FW 1",
+        "device_type": "temperature",
+        "source_id": "temperature_68a86214663e5ba07f6f9751",
+        "unit": "F",
+        "status": "ok",
+        "description": "Sensor at 0A_uwLmzDFwxF1Mgu45LRu",
+        "device_location": {
+            "modelId": "68a86214663e5ba07f6f9751",
+            "modelLocationId": "0A_uwLmzDFwxF1Mgu45LRu"
+        },
+        "device_geolocation": {
+            "lat": null,
+            "long": null
+        },
+        "normal_range": {
+            "min": null,
+            "max": null
+        },
+        "_id": "68b00de2438e1554509383ee",
+        "createdAt": "2025-08-28T08:05:54.728Z",
+        "updatedAt": "2025-08-28T08:05:54.728Z",
+        "__v": 0
+    },
+    {
+        "device_name": "FW 2",
+        "device_type": "temperature",
+        "source_id": "temperature_68a86214663e5ba07f6f9751",
+        "unit": "F",
+        "status": "ok",
+        "description": "Sensor at 0A_uwLmzDFwxF1Mgq45LRu",
+        "device_location": {
+            "modelId": "68a86214663e5ba07f6f9751",
+            "modelLocationId": "0A_uwLmzDFwxF1Mgq45LRu"
+        },
+        "device_geolocation": {
+            "lat": null,
+            "long": null
+        },
+        "normal_range": {
+            "min": null,
+            "max": null
+        },
+        "_id": "68b00e02438e1554509383f5",
+        "createdAt": "2025-08-28T08:06:26.271Z",
+        "updatedAt": "2025-08-28T08:06:26.271Z",
+        "__v": 0
+    }
+]
